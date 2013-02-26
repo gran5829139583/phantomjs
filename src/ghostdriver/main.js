@@ -71,14 +71,14 @@ try {
 
     // Start the server
     if (server.listen(listenOnPort, router.handle)) {
-        console.log('Ghost Driver running on port ' + server.port);
+        console.log('running on port ' + server.port);
 
         // If parameters regarding a Selenium Grid HUB were given, register to it!
         if (ghostdriver.system.args[2]) {
             ghostdriver.hub.register(listenOnIp, listenOnPort, ghostdriver.system.args[2]);
         }
     } else {
-        throw new Error("ERROR: Could not start Ghost Driver");
+        throw new Error("ERROR: Could not start");
         phantom.exit(1);
     }
 } catch (e) {
