@@ -307,6 +307,11 @@ ghostdriver.Session = function(desiredCapabilities) {
         // page.onConsoleMessage = function(msg) { console.log(msg); };
         // console.log("New Window/Page settings: " + JSON.stringify(page.settings, null, "  "));
 
+		//page.settings["userAgent"] = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:18.0) Gecko/20100101 Firefox/18.0";		//by zhu 
+		//firefox will cause click failed
+		//chrome liked useragent is ok!
+		page.settings["userAgent"] = "Mozilla/5.0 (Windows; U; Windows NT 5.2) AppleWebKit/525.13 (KHTML, like Gecko) Chrome/0.2.149.27 Safari/525.13";
+
         return page;
     },
 
@@ -494,4 +499,3 @@ ghostdriver.Session = function(desiredCapabilities) {
         timeoutNames : _const.TIMEOUT_NAMES
     };
 };
-
