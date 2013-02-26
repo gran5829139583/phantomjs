@@ -6,6 +6,7 @@ set QT_CFG=%QT_CFG% -opensource
 set QT_CFG=%QT_CFG% -confirm-license
 
 set QT_CFG=%QT_CFG% -release
+rem set QT_CFG=%QT_CFG% -debug
 set QT_CFG=%QT_CFG% -static
 
 set QT_CFG=%QT_CFG% -no-exceptions
