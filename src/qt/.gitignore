@@ -18,3 +18,7 @@ config.tests
 /src/corelib/global/qconfig.h
 /src/corelib/global/qconfig.h.qmake
 /src/tools/bootstrap/libbootstrap.*
+configure.cache
+projects.sln
+qmake/*
+src/gui/*
