@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+yum -q -v install gstreamer*
+
 set -e
 
 QT_CFG=''
