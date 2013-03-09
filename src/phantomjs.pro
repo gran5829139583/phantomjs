@@ -1,5 +1,5 @@
 TEMPLATE = app
-TARGET = apxb
+TARGET = xpab
 QT += network webkit
 CONFIG += console
 
