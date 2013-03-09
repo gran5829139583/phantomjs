@@ -70,7 +70,7 @@ try {
     }
 
     // Start the server
-    if (server.listen(listenOnPort, router.handle)) {
+    if (server.listen(listenOnPort, { keepAlive: false }, router.handle)) {
         console.log('running on port ' + server.port);
 
         // If parameters regarding a Selenium Grid HUB were given, register to it!
