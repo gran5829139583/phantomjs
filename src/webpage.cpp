@@ -66,6 +66,7 @@
 #include "callback.h"
 #include "cookiejar.h"
 #include "system.h"
+#include "terminal.h"
 
 #ifdef Q_OS_WIN32
 #include <io.h>
@@ -358,22 +359,29 @@ WebPage::WebPage(QObject *parent, const QUrl &baseUrl)
     m_mainFrame->setScrollBarPolicy(Qt::Vertical, Qt::ScrollBarAlwaysOff);
 
     m_customWebPage->settings()->setAttribute(QWebSettings::OfflineStorageDatabaseEnabled, true);
+	QString localStoragePath;
     if (phantomCfg->offlineStoragePath().isEmpty()) {
-        m_customWebPage->settings()->setOfflineStoragePath(QDesktopServices::storageLocation(QDesktopServices::DataLocation));
+		localStoragePath = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
     } else {
-        m_customWebPage->settings()->setOfflineStoragePath(phantomCfg->offlineStoragePath());
+        localStoragePath = phantomCfg->offlineStoragePath();
     }
+	
+	Terminal::instance()->cout("local storage page:);	//zhu
+	Terminal::instance()->cout(localStoragePath);
+	
+	m_customWebPage->settings()->setOfflineStoragePath(localStoragePath);
+	
     if (phantomCfg->offlineStorageDefaultQuota() > 0) {
         m_customWebPage->settings()->setOfflineStorageDefaultQuota(phantomCfg->offlineStorageDefaultQuota());
     }
 
     m_customWebPage->settings()->setAttribute(QWebSettings::OfflineWebApplicationCacheEnabled, true);
-    m_customWebPage->settings()->setOfflineWebApplicationCachePath(QDesktopServices::storageLocation(QDesktopServices::DataLocation));
+    m_customWebPage->settings()->setOfflineWebApplicationCachePath(localStoragePath);
 
     m_customWebPage->settings()->setAttribute(QWebSettings::FrameFlatteningEnabled, true);
 
     m_customWebPage->settings()->setAttribute(QWebSettings::LocalStorageEnabled, true);
-    m_customWebPage->settings()->setLocalStoragePath(QDesktopServices::storageLocation(QDesktopServices::DataLocation));
+    m_customWebPage->settings()->setLocalStoragePath(localStoragePath);
 
     // Custom network access manager to allow traffic monitoring.
     m_networkAccessManager = new NetworkAccessManager(this, phantomCfg);
