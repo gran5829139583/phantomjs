@@ -202,7 +202,7 @@ ghostdriver.Session = function(desiredCapabilities) {
         // Starting loadingTimer
         // console.log("Setting 'loadingTimer' to: " + _getPageLoadTimeout());
         loadingTimer = setTimeout(function() {
-            // console.log("loadingTimer: pageLoadTimeout");
+            console.log("loadingTimer: pageLoadTimeout");	//zhu
 
             thisPage.stop();                    //< stop the page from loading
             thisPage.resetOneShotCallbacks();

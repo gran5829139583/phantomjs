@@ -366,7 +366,7 @@ WebPage::WebPage(QObject *parent, const QUrl &baseUrl)
         localStoragePath = phantomCfg->offlineStoragePath();
     }
 	
-	Terminal::instance()->cout("local storage page:);	//zhu
+	Terminal::instance()->cout("local storage page:");	//zhu
 	Terminal::instance()->cout(localStoragePath);
 	
 	m_customWebPage->settings()->setOfflineStoragePath(localStoragePath);

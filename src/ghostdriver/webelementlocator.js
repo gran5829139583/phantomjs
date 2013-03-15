@@ -224,6 +224,7 @@ ghostdriver.WebElementLocator = function(session) {
             return;
         }
 
+		console.log("locate element(s) failed. ");
         // Error handler. We got a valid response, but it was an error response.
         if (elementOrElements) {
             _errors.handleFailedCommandEH(
