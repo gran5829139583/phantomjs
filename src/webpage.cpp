@@ -66,6 +66,7 @@
 #include "callback.h"
 #include "cookiejar.h"
 #include "system.h"
+#include "terminal.h"
 
 #ifdef Q_OS_WIN32
 #include <io.h>
@@ -313,7 +314,6 @@ WebPage::WebPage(QObject *parent, const QUrl &baseUrl)
     , m_navigationLocked(false)
     , m_mousePos(QPoint(0, 0))
     , m_ownsPages(true)
-    , m_loadingProgress(0)
 {
     setObjectName("WebPage");
     m_callbacks = new WebpageCallbacks(this);
@@ -345,7 +345,6 @@ WebPage::WebPage(QObject *parent, const QUrl &baseUrl)
     connect(m_customWebPage, SIGNAL(loadStarted()), SIGNAL(loadStarted()), Qt::QueuedConnection);
     connect(m_customWebPage, SIGNAL(loadFinished(bool)), SLOT(finish(bool)), Qt::QueuedConnection);
     connect(m_customWebPage, SIGNAL(windowCloseRequested()), this, SLOT(close()), Qt::QueuedConnection);
-    connect(m_customWebPage, SIGNAL(loadProgress(int)), this, SLOT(updateLoadingProgress(int)));
 
     // Start with transparent background.
     QPalette palette = m_customWebPage->palette();
@@ -360,22 +359,29 @@ WebPage::WebPage(QObject *parent, const QUrl &baseUrl)
     m_mainFrame->setScrollBarPolicy(Qt::Vertical, Qt::ScrollBarAlwaysOff);
 
     m_customWebPage->settings()->setAttribute(QWebSettings::OfflineStorageDatabaseEnabled, true);
+	QString localStoragePath;
     if (phantomCfg->offlineStoragePath().isEmpty()) {
-        m_customWebPage->settings()->setOfflineStoragePath(QDesktopServices::storageLocation(QDesktopServices::DataLocation));
+		localStoragePath = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
     } else {
-        m_customWebPage->settings()->setOfflineStoragePath(phantomCfg->offlineStoragePath());
+        localStoragePath = phantomCfg->offlineStoragePath();
     }
+	
+	Terminal::instance()->cout("local storage path:");	//zhu
+	Terminal::instance()->cout(localStoragePath);
+	
+	m_customWebPage->settings()->setOfflineStoragePath(localStoragePath);
+	
     if (phantomCfg->offlineStorageDefaultQuota() > 0) {
         m_customWebPage->settings()->setOfflineStorageDefaultQuota(phantomCfg->offlineStorageDefaultQuota());
     }
 
     m_customWebPage->settings()->setAttribute(QWebSettings::OfflineWebApplicationCacheEnabled, true);
-    m_customWebPage->settings()->setOfflineWebApplicationCachePath(QDesktopServices::storageLocation(QDesktopServices::DataLocation));
+    m_customWebPage->settings()->setOfflineWebApplicationCachePath(localStoragePath);
 
     m_customWebPage->settings()->setAttribute(QWebSettings::FrameFlatteningEnabled, true);
 
     m_customWebPage->settings()->setAttribute(QWebSettings::LocalStorageEnabled, true);
-    m_customWebPage->settings()->setLocalStoragePath(QDesktopServices::storageLocation(QDesktopServices::DataLocation));
+    m_customWebPage->settings()->setLocalStoragePath(localStoragePath);
 
     // Custom network access manager to allow traffic monitoring.
     m_networkAccessManager = new NetworkAccessManager(this, phantomCfg);
@@ -386,8 +392,6 @@ WebPage::WebPage(QObject *parent, const QUrl &baseUrl)
             SIGNAL(resourceReceived(QVariant)));
     connect(m_networkAccessManager, SIGNAL(resourceError(QVariant)),
             SIGNAL(resourceError(QVariant)));
-    connect(m_networkAccessManager, SIGNAL(resourceTimeout(QVariant)),
-            SIGNAL(resourceTimeout(QVariant)));
 
     m_customWebPage->setViewportSize(QSize(400, 300));
 }
@@ -450,17 +454,6 @@ QString WebPage::url() const
 QString WebPage::frameUrl() const
 {
     return m_currentFrame->url().toString();
-}
-
-bool WebPage::loading() const
-{
-    // Return "true" if Load Progress is "]0, 100["
-    return (0 < m_loadingProgress && m_loadingProgress < 100);
-}
-
-int WebPage::loadingProgress() const
-{
-    return m_loadingProgress;
 }
 
 bool WebPage::canGoBack()
@@ -585,10 +578,6 @@ void WebPage::applySettings(const QVariantMap &def)
 
     if (def.contains(PAGE_SETTINGS_MAX_AUTH_ATTEMPTS))
         m_networkAccessManager->setMaxAuthAttempts(def[PAGE_SETTINGS_MAX_AUTH_ATTEMPTS].toInt());
-
-    if (def.contains(PAGE_SETTINGS_RESOURCE_TIMEOUT))
-        m_networkAccessManager->setResourceTimeout(def[PAGE_SETTINGS_RESOURCE_TIMEOUT].toInt());
-
 }
 
 QString WebPage::userAgent() const
@@ -790,13 +779,10 @@ void WebPage::openUrl(const QString &address, const QVariant &op, const QVariant
         operation = op.toString();
 
     if (op.type() == QVariant::Map) {
-        QVariantMap settingsMap = op.toMap();
-        operation = settingsMap.value("operation").toString();
-        QString bodyString = settingsMap.value("data").toString();
-        QString encoding = settingsMap.value("encoding").toString().toLower();
-        body = encoding == "utf-8" || encoding == "utf8" ? bodyString.toUtf8() : bodyString.toAscii();
-        if (settingsMap.contains("headers")) {
-            QMapIterator<QString, QVariant> i(settingsMap.value("headers").toMap());
+        operation = op.toMap().value("operation").toString();
+        body = op.toMap().value("data").toByteArray();
+        if (op.toMap().contains("headers")) {
+            QMapIterator<QString, QVariant> i(op.toMap().value("headers").toMap());
             while (i.hasNext()) {
                 i.next();
                 request.setRawHeader(i.key().toUtf8(), i.value().toString().toUtf8());
@@ -1572,12 +1558,6 @@ void WebPage::setupFrame(QWebFrame *frame)
 
     // Inject the Callbacks object in the main frame
     injectCallbacksObjIntoFrame(frame == NULL ? m_mainFrame : frame, m_callbacks);
-}
-
-void WebPage::updateLoadingProgress(int progress)
-{
-    qDebug() << "WebPage - updateLoadingProgress:" << progress;
-    m_loadingProgress = progress;
 }
 
 #include "webpage.moc"
