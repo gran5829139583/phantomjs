@@ -93,7 +93,7 @@ ghostdriver.WebElementLocator = function(session) {
     _locateElement = function(locator, rootElement) {
         var findElementRes = _find("element", locator, rootElement);
 
-        // console.log("Locator: "+JSON.stringify(locator));
+        //console.log("Locator: "+JSON.stringify(locator));
         // console.log("Find Element Result: "+JSON.stringify(findElementRes));
 
         // If found
@@ -224,7 +224,7 @@ ghostdriver.WebElementLocator = function(session) {
             return;
         }
 
-		console.log("locate element(s) failed. ");
+		console.log("locate element(s) failed -- " + (req)?req.post:"");
         // Error handler. We got a valid response, but it was an error response.
         if (elementOrElements) {
             _errors.handleFailedCommandEH(
