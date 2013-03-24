@@ -29,23 +29,12 @@ var ghostdriver = ghostdriver || {};
 
 ghostdriver.Session = function(desiredCapabilities) {
     // private:
-    const
-    _const = {
-        TIMEOUT_NAMES : {
-            SCRIPT          : "script",
-            ASYNC_SCRIPT    : "async script",
-            IMPLICIT        : "implicit",
-            PAGE_LOAD       : "page load"
-        },
-        ONE_SHOT_POSTFIX : "OneShot"
-    };
-
     var
     _defaultCapabilities = {    // TODO - Actually try to match the "desiredCapabilities" instead of ignoring them
         "browserName" : "phantomjs",
-        "version" : phantom.version.major + '.' + phantom.version.minor + '.' + phantom.version.patch,
-        "driverName" : "ghostdriver",
-        "driverVersion" : ghostdriver.version,
+        "version" :
+            "phantomjs-" + phantom.version.major + '.' + phantom.version.minor + '.' + phantom.version.patch + '+' +
+            "ghostdriver-" + ghostdriver.version,
         "platform" : ghostdriver.system.os.name + '-' + ghostdriver.system.os.version + '-' + ghostdriver.system.os.architecture,
         "javascriptEnabled" : true,
         "takesScreenshot" : true,
@@ -66,8 +55,6 @@ ghostdriver.Session = function(desiredCapabilities) {
     _negotiatedCapabilities = {
         "browserName"               : _defaultCapabilities.browserName,
         "version"                   : _defaultCapabilities.version,
-        "driverName"                : _defaultCapabilities.driverName,
-        "driverVersion"             : _defaultCapabilities.driverVersion,
         "platform"                  : _defaultCapabilities.platform,
         "javascriptEnabled"         : typeof(desiredCapabilities.javascriptEnabled) === "undefined" ?
             _defaultCapabilities.javascriptEnabled :
@@ -96,8 +83,17 @@ ghostdriver.Session = function(desiredCapabilities) {
     _timeouts = {
         "script"            : _max32bitInt,
         "async script"      : _max32bitInt,
-        "implicit"          : 5,            //< 5ms
+        "implicit"          : 0,            //< 0s
         "page load"         : _max32bitInt,
+    },
+    _const = {
+        TIMEOUT_NAMES : {
+            SCRIPT          : "script",
+            ASYNC_SCRIPT    : "async script",
+            IMPLICIT        : "implicit",
+            PAGE_LOAD       : "page load"
+        },
+        ONE_SHOT_POSTFIX : "OneShot"
     },
     _windows = {},  //< NOTE: windows are "webpage" in Phantom-dialect
     _currentWindowHandle = null,
@@ -105,7 +101,6 @@ ghostdriver.Session = function(desiredCapabilities) {
     _inputs = ghostdriver.Inputs(),
     _capsPageSettingsPref = "phantomjs.page.settings.",
     _pageSettings = {},
-    _log = ghostdriver.logger.create("Session [" + _id + "]"),
     k, settingKey;
 
     // Searching for `phantomjs.settings.*` in the Desired Capabilities and merging with the Negotiated Capabilities
@@ -124,108 +119,115 @@ ghostdriver.Session = function(desiredCapabilities) {
     /**
      * Executes a function and waits for Load to happen.
      *
-     * @param code Code to execute: a Function or just plain code
+     * @param func Function to execute
      * @param onLoadFunc Function to execute when page finishes Loading
      * @param onErrorFunc Function to execute in case of error
-     *        (eg. Javascript error, page load problem or timeout).
      * @param execTypeOpt Decides if to "apply" the function directly or page."eval" it.
      *                    Optional. Default value is "apply".
      */
-    _execFuncAndWaitForLoadDecorator = function(code, onLoadFunc, onErrorFunc, execTypeOpt) {
+    _execFuncAndWaitForLoadDecorator = function(func, onLoadFunc, onErrorFunc, execTypeOpt) {
         // convert 'arguments' to a real Array
         var args = Array.prototype.splice.call(arguments, 0),
-            thisPage = this,
-            onLoadFinishedArgs = null,
-            onErrorArgs = null;
+            loadingTimer,
+            loadingNewPage = false,
+            pageLoadNotTriggered = true,
+            thisPage = this;
 
         // Normalize "execTypeOpt" value
-        if (typeof(execTypeOpt) === "undefined" ||
-            (execTypeOpt !== "apply" && execTypeOpt !== "eval")) {
+        if (typeof(execexecTypeOpt) === "undefined" ||
+            (execexecTypeOpt !== "apply" && execTypeOpt !== "eval")) {
             execTypeOpt = "apply";
         }
 
-        // Our callbacks assume that the only thing affecting the page state
-        // is the function we execute. Therefore we need to kill any
-        // pre-existing activity (such as part of the page being loaded in
-        // the background), otherwise it's events might interleave with the
-        // events from the current function.
-        this.stop();
+        // Separating arguments for the "function call" from the callback handlers.
+        if (execTypeOpt === "eval") {
+            // NOTE: I'm also passing 'evalFunc' as first parameter
+            // for the 'evaluate' call, and '0' as timeout.
+            args.splice(0, 3, evalFunc, 0);
+        } else {
+            args.splice(0, 3);
+        }
 
-        // Register Callbacks to grab any async event we are interested in
-        this.setOneShotCallback("onLoadFinished", function (status) {
-            _log.debug("_execFuncAndWaitForLoadDecorator", "onLoadFinished: " + status);
+        // Register event handlers
+        // This logic bears some explaining. If we are loading a new page,
+        // the loadStarted event will fire, then urlChanged, then loadFinished,
+        // assuming no errors. However, when navigating to a fragment on the
+        // same page, neither the loadStarted nor the loadFinished events will
+        // fire. So if we receive a urlChanged event without a corresponding
+        // loadStarted event, we know we are only navigating to a fragment on
+        // the same page, and should fire the onLoadFunc callback. Otherwise,
+        // we need to wait until the loadFinished event before firing the
+        // callback.
+        this.setOneShotCallback("onLoadStarted", function () {
+            // console.log("onLoadStarted");
 
-            onLoadFinishedArgs = Array.prototype.slice.call(arguments);
+            pageLoadNotTriggered = false;
+            loadingNewPage = true;
+        });
+        this.setOneShotCallback("onUrlChanged", function () {
+            // console.log("onUrlChanged");
+
+            pageLoadNotTriggered = false;
+            // If "not loading a new page" it's just a fragment change
+            // and we should call "onLoadFunc()"
+            if (!loadingNewPage) {
+                clearTimeout(loadingTimer);
+                thisPage.resetOneShotCallbacks();
+                onLoadFunc.call(thisPage, "success");
+            }
+        });
+        this.setOneShotCallback("onLoadFinished", function () {
+            // console.log("onLoadFinished");
+
+            clearTimeout(loadingTimer);
+            thisPage.resetOneShotCallbacks();
+            onLoadFunc.apply(thisPage, arguments);
         });
         this.setOneShotCallback("onError", function(message, stack) {
-            _log.debug("_execFuncAndWaitForLoadDecorator", "onError: "+message+"\n");
-            stack.forEach(function(item) {
-                var msg = item.file + ":" + item.line;
-                msg += item["function"] ? " in " + item["function"] : "";
-                _log.debug("_execFuncAndWaitForLoadDecorator", "  " + msg);
-            });
+            // console.log("onError: "+message+"\n");
+            // stack.forEach(function(item) {
+            //     var message = item.file + ":" + item.line;
+            //     if (item["function"])
+            //         message += " in " + item["function"];
+            //     console.log("  " + message);
+            // });
 
-            onErrorArgs = Array.prototype.slice.call(arguments);
+            pageLoadNotTriggered = false;
+            thisPage.stop(); //< stop the page from loading
+            clearTimeout(loadingTimer);
+            thisPage.resetOneShotCallbacks();
+            onErrorFunc.apply(thisPage, arguments);
         });
 
-        // Execute "code"
+        // Starting loadingTimer
+        // console.log("Setting 'loadingTimer' to: " + _getPageLoadTimeout());
+        loadingTimer = setTimeout(function() {
+            console.log("loadingTimer: pageLoadTimeout");	//zhu
+
+            thisPage.stop();                    //< stop the page from loading
+            thisPage.resetOneShotCallbacks();
+            onErrorFunc.apply(thisPage, arguments);
+        }, _getPageLoadTimeout());
+
+        // In case a Page Load is not triggered at all (within 0.5s), we assume it's done and move on
+        setTimeout(function() {
+            if (pageLoadNotTriggered === true) {
+                // console.log("pageLoadNotTriggered");
+
+                clearTimeout(loadingTimer);
+                thisPage.resetOneShotCallbacks();
+                onLoadFunc.call(thisPage, "success");
+            }
+        }, 500);
+
+        // We are ready to execute
         if (execTypeOpt === "eval") {
-            // Remove arguments used by this function before providing them to the target code.
-            // NOTE: Passing 'code' (to evaluate) and '0' (timeout) to 'evaluateAsync'.
-            args.splice(0, 3, code, 0);
             // Invoke the Page Eval with the provided function
             this.evaluateAsync.apply(this, args);
         } else {
-            // Remove arguments used by this function before providing them to the target function.
-            args.splice(0, 3);
             // "Apply" the provided function
-            code.apply(this, args);
+            func.apply(this, args);
         }
-
-        // Wait 10ms before proceeding any further: in this window of time
-        // the page can react and start loading (if it has to).
-        setTimeout(function() {
-            var loadingStartedTs,
-                checkLoadingFinished;
-
-            loadingStartedTs = new Date().getTime();
-
-            checkLoadingFinished = function() {
-                if (!_isLoading()) {               //< page finished loading
-                    _log.debug("_execFuncAndWaitForLoadDecorator", "Page Loading in Session: false");
-
-                    thisPage.resetOneShotCallbacks();
-
-                    if (onLoadFinishedArgs !== null) {
-                        // Report the result of the "Load Finished" event
-                        onLoadFunc.apply(thisPage, onLoadFinishedArgs);
-                    } else if (onErrorArgs !== null) {
-                        // Report the "Error" event
-                        onErrorFunc.apply(thisPage, onErrorArgs);
-                    } else {
-                        // No page load was caused: just report "success"
-                        onLoadFunc.call(thisPage, "success");
-                    }
-
-                    return;
-                } // else:
-                _log.debug("_execFuncAndWaitForLoadDecorator", "Page Loading in Session: true");
-
-                // Timeout error?
-                if (new Date().getTime() - loadingStartedTs > _getPageLoadTimeout()) {
-                    thisPage.resetOneShotCallbacks();
-
-                    // Report the "Timeout" event
-                    onErrorFunc.call(thisPage, "timeout");
-
-                    return;
-                }
-
-                // Retry in 100ms
-                setTimeout(checkLoadingFinished, 100);
-            };
-            checkLoadingFinished();
-        }, 10);
     },
 
     _oneShotCallbackFactory = function(page, callbackName) {
@@ -233,8 +235,7 @@ ghostdriver.Session = function(desiredCapabilities) {
             var retVal;
 
             if (typeof(page[callbackName + _const.ONE_SHOT_POSTFIX]) === "function") {
-                _log.debug("_oneShotCallback", callbackName);
-
+                // console.log("Invoking one-shot-callback for: " + callbackName);
                 retVal = page[callbackName + _const.ONE_SHOT_POSTFIX].apply(page, arguments);
                 page[callbackName + _const.ONE_SHOT_POSTFIX] = null;
             }
@@ -251,7 +252,7 @@ ghostdriver.Session = function(desiredCapabilities) {
     },
 
     _resetOneShotCallbacksDecorator = function() {
-        _log.debug("_resetOneShotCallbacksDecorator");
+        // console.log("Clearing One-Shot Callbacks");
 
         this["onLoadStarted" + _const.ONE_SHOT_POSTFIX] = null;
         this["onLoadFinished" + _const.ONE_SHOT_POSTFIX] = null;
@@ -261,16 +262,12 @@ ghostdriver.Session = function(desiredCapabilities) {
 
     // Add any new page to the "_windows" container of this session
     _addNewPage = function(newPage) {
-        _log.debug("_addNewPage");
-
         _decorateNewWindow(newPage);                //< decorate the new page
         _windows[newPage.windowHandle] = newPage;   //< store the page/window
     },
 
     // Delete any closing page from the "_windows" container of this session
     _deleteClosingPage = function(closingPage) {
-        _log.debug("_deleteClosingPage");
-
         // Need to be defensive, as the "closing" can be cause by Client Commands
         if (_windows.hasOwnProperty(closingPage.windowHandle)) {
             delete _windows[closingPage.windowHandle];
@@ -307,28 +304,15 @@ ghostdriver.Session = function(desiredCapabilities) {
             }
         }
 
-        page.onConsoleMessage = function(msg) { _log.debug("page.onConsoleMessage", msg); };
+        // page.onConsoleMessage = function(msg) { console.log(msg); };
+        // console.log("New Window/Page settings: " + JSON.stringify(page.settings, null, "  "));
 
-        _log.debug("_decorateNewWindow", "page.settings: " + JSON.stringify(page.settings));
+		//page.settings["userAgent"] = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:18.0) Gecko/20100101 Firefox/18.0";		//by zhu 
+		//firefox will cause click failed
+		//chrome liked useragent is ok!
+		page.settings["userAgent"] = "Mozilla/5.0 (Windows; U; Windows NT 5.2) AppleWebKit/525.13 (KHTML, like Gecko) Chrome/0.2.149.27 Safari/525.13";
 
         return page;
-    },
-
-    /**
-     * Is any window in this Session Loading?
-     * @returns "true" if at least 1 window is loading.
-     */
-    _isLoading = function() {
-        var wHandle;
-
-        for (wHandle in _windows) {
-            if (_windows[wHandle].loading) {
-                return true;
-            }
-        }
-
-        // If we arrived here, means that no window is loading
-        return false;
     },
 
     _getWindow = function(handleOrName) {
@@ -351,9 +335,7 @@ ghostdriver.Session = function(desiredCapabilities) {
         return page;
     },
 
-    _init = function() {
-        var page;
-
+    _initCurrentWindowIfNull = function() {
         // Ensure a Current Window is available, if it's found to be `null`
         if (_currentWindowHandle === null) {
             // First call to get the current window: need to create one
@@ -366,6 +348,7 @@ ghostdriver.Session = function(desiredCapabilities) {
     _getCurrentWindow = function() {
         var page = null;
 
+        _initCurrentWindowIfNull();
         if (_windows.hasOwnProperty(_currentWindowHandle)) {
             page = _windows[_currentWindowHandle];
         }
@@ -486,12 +469,8 @@ ghostdriver.Session = function(desiredCapabilities) {
         }
     };
 
-    // Initialize the Session.
-    // Particularly, create the first empty page/window.
-    _init();
-
-    _log.info("CONSTRUCTOR", "Desired Capabilities: " + JSON.stringify(desiredCapabilities));
-    _log.info("CONSTRUCTOR", "Negotiated Capabilities: " + JSON.stringify(_negotiatedCapabilities));
+    // console.log("Session '" + _id + "' - Capabilities: " + JSON.stringify(_negotiatedCapabilities, null, "  "));
+    // console.log("Desired: "+JSON.stringify(desiredCapabilities, null, "  "));
 
     // public:
     return {
@@ -503,6 +482,7 @@ ghostdriver.Session = function(desiredCapabilities) {
         getWindow : _getWindow,
         closeWindow : _closeWindow,
         getWindowsCount : _getWindowsCount,
+        initCurrentWindowIfNull : _initCurrentWindowIfNull,
         getCurrentWindowHandle : _getCurrentWindowHandle,
         getWindowHandles : _getWindowHandles,
         isValidWindowHandle : _isValidWindowHandle,
@@ -516,8 +496,6 @@ ghostdriver.Session = function(desiredCapabilities) {
         getAsyncScriptTimeout : _getAsyncScriptTimeout,
         getImplicitTimeout : _getImplicitTimeout,
         getPageLoadTimeout : _getPageLoadTimeout,
-        timeoutNames : _const.TIMEOUT_NAMES,
-        isLoading : _isLoading
+        timeoutNames : _const.TIMEOUT_NAMES
     };
 };
-
