@@ -165,6 +165,17 @@ ghostdriver.Session = function(desiredCapabilities) {
                 _log.debug("_execFuncAndWaitForLoadDecorator", "  " + msg);
             });
 
+			/*						//此类错误不会导致客户端异常
+			EvalError
+			SyntaxError
+			RangeError
+			ReferenceError
+			TypeError
+			URIError
+			*/
+			if (message.indexOf("Error") >= 0){				//added by zhu
+				return;
+			}
             onErrorArgs = Array.prototype.slice.call(arguments);
         });
 
