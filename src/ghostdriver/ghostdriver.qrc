@@ -78,5 +78,7 @@
         <file>third_party/webdriver-atoms/type.js</file>
         <file>webdriver_atoms.js</file>
         <file>webelementlocator.js</file>
+		<file>third_party/webdriver-atoms/get_parent.js</file>	<!-- added by zhu -->
+		<file>third_party/webdriver-atoms/delete_element.js</file>	<!-- added by zhu -->
     </qresource>
 </RCC>

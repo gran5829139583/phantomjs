@@ -34,6 +34,7 @@ ghostdriver.WebElementReqHand = function(idOrElement, session) {
     _const = {
         ELEMENT             : "element",
         ELEMENTS            : "elements",
+		PARENT             	: "parent",		//added by zhu
         VALUE               : "value",
         SUBMIT              : "submit",
         DISPLAYED           : "displayed",
@@ -61,11 +62,16 @@ ghostdriver.WebElementReqHand = function(idOrElement, session) {
 
     _handle = function(req, res) {
         _protoParent.handle.call(this, req, res);
-
         if (req.urlParsed.file === _const.ELEMENT && req.method === "POST") {
             _locator.handleLocateCommand(req, res, _locator.locateElement, _getJSON());
             return;
-        } else if (req.urlParsed.file === _const.ELEMENTS && req.method === "POST") {
+		} else if (req.urlParsed.file === _const.ELEMENT && req.method === "DELETE") {			//added by zhu //to support delete element
+			_deleteElementCommand(req, res);													//added by zhu
+            return;
+		} else if (req.urlParsed.file === _const.PARENT && req.method === "GET") {			//added by zhu //to support get parent element
+			_getParentCommand(req, res);													//added by zhu
+            return;
+		} else if (req.urlParsed.file === _const.ELEMENTS && req.method === "POST") {
             _locator.handleLocateCommand(req, res, _locator.locateElements, _getJSON());
             return;
         } else if (req.urlParsed.file === _const.VALUE && req.method === "POST") {
@@ -327,7 +333,6 @@ ghostdriver.WebElementReqHand = function(idOrElement, session) {
                 attributeValueAtom,     // < Atom to read an attribute
                 _getJSON(),             // < Element to read from
                 req.urlParsed.file);    // < Attribute to read
-
             res.respondBasedOnResult(_session, req, result);
             return;
         }
@@ -462,6 +467,22 @@ ghostdriver.WebElementReqHand = function(idOrElement, session) {
                 }
             }
         });
+    },
+	
+    _deleteElementCommand = function(req, res) {			//added by zhu
+		var currWindow = _protoParent.getSessionCurrWindow.call(this, _session, req);
+        var result = _protoParent.getSessionCurrWindow.call(this, _session, req).evaluate(
+                require("./webdriver_atoms.js").get("delete_element"),
+                _getJSON());
+        res.respondBasedOnResult(_session, req, result);
+    },
+
+    _getParentCommand = function(req, res) {			//added by zhu
+		var parent = _protoParent.getSessionCurrWindow.call(this, _session, req).evaluate(
+            require("./webdriver_atoms.js").get("get_parent"),
+            _getJSON());
+		var result = JSON.parse(parent);
+        res.respondBasedOnResult(_session, req, result);
     },
 
     _getSelectedCommand = function(req, res) {
