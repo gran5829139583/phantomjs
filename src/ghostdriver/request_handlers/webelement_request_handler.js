@@ -34,7 +34,7 @@ ghostdriver.WebElementReqHand = function(idOrElement, session) {
     _const = {
         ELEMENT             : "element",
         ELEMENTS            : "elements",
-		PARENT             	: "parent",		//added by zhu
+        PARENT             	: "parent",		//added by zhu
         VALUE               : "value",
         SUBMIT              : "submit",
         DISPLAYED           : "displayed",
