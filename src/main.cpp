@@ -60,8 +60,21 @@ Q_IMPORT_PLUGIN(qico)
 #error Something is wrong with the setup. Please report to the mailing list!
 #endif
 
+
+//getpid()  //added by zhu
+#ifdef _WIN32
+#include <process.h>
+#else
+#include <unistd.h>
+#endif
+
+
+
 int main(int argc, char** argv, const char** envp)
 {
+	int pid = (int)_getpid();			//added by zhu
+	printf("PID: %d\n", pid);
+	
     // Setup Google Breakpad exception handler
 #ifdef Q_OS_LINUX
     google_breakpad::ExceptionHandler eh("/tmp", NULL, Utils::exceptionHandler, NULL, true);
