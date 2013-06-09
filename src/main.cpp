@@ -72,7 +72,12 @@ Q_IMPORT_PLUGIN(qico)
 
 int main(int argc, char** argv, const char** envp)
 {
-	int pid = (int)_getpid();			//added by zhu
+#ifdef _WIN32							//added by zhu
+	int pid = (int)_getpid();
+#else
+	int pid = (int)getpid();
+#endif
+
 	printf("PID: %d\n", pid);
 	
     // Setup Google Breakpad exception handler
