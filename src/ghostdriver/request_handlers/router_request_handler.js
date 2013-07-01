@@ -50,6 +50,8 @@ ghostdriver.RouterReqHand = function() {
     _log = ghostdriver.logger.create("RouterReqHand"),
 
     _handle = function(req, res) {
+		lastRequestTime = new Date();	//added by zhu
+		
         var session,
             sessionRH;
 
@@ -99,6 +101,20 @@ ghostdriver.RouterReqHand = function() {
             }
         }
     };
+
+	var lastRequestTime = new Date();	//added by zhu
+	var MAX_IDLE_SECONDS = 60 * 5;	//max 5 minutes in idle
+	function _checkAlive(){		//added by zhu
+		var now = new Date();
+		var diffSeconds = (now - lastRequestTime) / 1000;
+		_log.error("_checkAlive", "no requests in " + diffSeconds + " seconds.");
+		if (diffSeconds > MAX_IDLE_SECONDS){
+			_log.error("_checkAlive", "timeout!!! quit program");
+			phantom.exit(1);	//exit
+		}
+	}
+    // check alive every 10 seconds
+    setInterval(_checkAlive, 10 * 1000);	//added by zhu
 
     // public:
     return {
