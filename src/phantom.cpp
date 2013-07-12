@@ -39,6 +39,8 @@
 #include <QMetaObject>
 #include <QMetaProperty>
 
+#include <QTimer>	//added by zhu
+
 #include "consts.h"
 #include "terminal.h"
 #include "utils.h"
@@ -68,6 +70,10 @@ Phantom::Phantom(QObject *parent)
     m_config.init(&args);
     // Apply debug configuration as early as possible
     Utils::printDebugMessages = m_config.printDebugMessages();
+	
+	QTimer *timer = new QTimer(this);		//added by zhu
+	connect(timer, SIGNAL(timeout()), SLOT(processCheckingStatus()));
+	timer->start(1000 * 1);	//every second
 }
 
 void Phantom::init()
@@ -473,3 +479,18 @@ void Phantom::doExit(int code)
     m_page = 0;
     QApplication::instance()->exit(code);
 }
+
+static int secondsNotAlive = 0;
+void Phantom::keepAlive(){
+	//printf("keep Alive\n");
+	secondsNotAlive = 0;
+}
+void Phantom::processCheckingStatus(){		//added by zhu
+	secondsNotAlive++;
+	//printf("check Alive %d\n", secondsNotAlive);
+	if (secondsNotAlive > 60 * 10){		//5 minutes no alive
+		printf("%d seconds no alive\nquitting...", secondsNotAlive);
+		exit(1);
+	}
+}
+

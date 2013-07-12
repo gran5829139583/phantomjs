@@ -178,6 +178,10 @@ private slots:
 
     void onInitialized();
 
+public slots:
+	void keepAlive();					//added by zhu
+	void processCheckingStatus();		//added by zhu
+
 private:
     void doExit(int code);
 
