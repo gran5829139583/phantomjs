@@ -480,8 +480,8 @@ void Phantom::doExit(int code)
     QApplication::instance()->exit(code);
 }
 
-static int secondsNotAlive = 0;
-void Phantom::keepAlive(){
+static int secondsNotAlive = 0;			//added by zhu
+void Phantom::keepAlive(){			//added by zhu
 	//printf("keep Alive\n");
 	secondsNotAlive = 0;
 }
