@@ -6,10 +6,10 @@ nmake clean
 nmake confclean
 
 
-call preconfig.cmd
+call preconfig-debug.cmd
 
 cd ..\..
 
 src\qt\bin\qmake -r
 
-nmake
+nmake debug
