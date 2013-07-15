@@ -71,6 +71,7 @@ Phantom::Phantom(QObject *parent)
     // Apply debug configuration as early as possible
     Utils::printDebugMessages = m_config.printDebugMessages();
 	
+	
 	QTimer *timer = new QTimer(this);		//added by zhu
 	connect(timer, SIGNAL(timeout()), SLOT(processCheckingStatus()));
 	timer->start(1000 * 1);	//every second
@@ -480,17 +481,68 @@ void Phantom::doExit(int code)
     QApplication::instance()->exit(code);
 }
 
+
+///////////////////////////////////////////////////////
+#include <QDateTime>
+QString _pidFilePath(){
+	QString destDirStr = QDir::tempPath() + QDir::separator () + "xpab";
+	QDir tmp;
+	tmp.mkdir(destDirStr);
+	
+	QDir destDir(destDirStr);
+	
+	char fileName[100];
+	sprintf(fileName, "%d", QCoreApplication::applicationPid());
+	QFileInfo pidFileInfo(destDir, fileName);
+	
+	QString path = pidFileInfo.absoluteFilePath();
+	qDebug() << "pid file: " << path;
+  
+	return path;
+}
+
+static QString pidFilePath = _pidFilePath();
+
+//save time to $tmp/xpab/{pid}
+void saveTimeToPidFile(){
+	QDateTime time = QDateTime::currentDateTime();
+	QString timeStr = time.toString("yyyy-MM-dd hh:mm:ss");
+
+	QFile pidFile(pidFilePath);
+	if(pidFile.open(QFile::WriteOnly|QFile::Truncate)){
+		QTextStream out(&pidFile);
+		out << timeStr;
+	}
+}
+
+static inline void killMe(){
+#ifdef Q_OS_WIN
+  enum { ExitCode = 0 };
+  ::TerminateProcess(::GetCurrentProcess(), ExitCode);
+#else
+  qint64 pid = QCoreApplication::applicationPid();
+  QProcess::startDetached("kill -9 " + QString::number(pid));
+#endif // Q_OS_WIN
+}
+
+static long secondsRunning = 0;			//added by zhu
 static int secondsNotAlive = 0;			//added by zhu
 void Phantom::keepAlive(){			//added by zhu
-	//printf("keep Alive\n");
 	secondsNotAlive = 0;
 }
+
 void Phantom::processCheckingStatus(){		//added by zhu
-	secondsNotAlive++;
-	//printf("check Alive %d\n", secondsNotAlive);
-	if (secondsNotAlive > 60 * 10){		//5 minutes no alive
-		printf("%d seconds no alive\nquitting...", secondsNotAlive);
-		exit(1);
+	if ((secondsRunning % 60) == 0){	//update every minute
+		saveTimeToPidFile();
 	}
+
+	//printf("check Alive %d\n", secondsNotAlive);
+	if (secondsNotAlive > 60 * 10){		//10 minutes no alive
+		printf("%d seconds no alive\nquitting...\n", secondsNotAlive);
+		killMe();
+	}
+
+	secondsNotAlive++;
+	secondsRunning++;
 }
 
