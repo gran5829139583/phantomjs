@@ -496,18 +496,21 @@ QString _pidFilePath(){
 	QFileInfo pidFileInfo(destDir, fileName);
 	
 	QString path = pidFileInfo.absoluteFilePath();
-	qDebug() << "pid file: " << path;
+	qDebug() << "xpab pid file: " << path;
   
 	return path;
 }
 
-static QString pidFilePath = _pidFilePath();
+static QString pidFilePath;
 
 //save time to $tmp/xpab/{pid}
 void saveTimeToPidFile(){
 	QDateTime time = QDateTime::currentDateTime();
 	QString timeStr = time.toString("yyyy-MM-dd hh:mm:ss");
 
+	if (pidFilePath.isEmpty()){
+		pidFilePath = _pidFilePath();
+	}
 	QFile pidFile(pidFilePath);
 	if(pidFile.open(QFile::WriteOnly|QFile::Truncate)){
 		QTextStream out(&pidFile);
