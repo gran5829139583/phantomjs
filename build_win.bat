@@ -7,6 +7,7 @@ nmake confclean
 
 
 call preconfig.cmd
+call build_qt.cmd
 
 cd ..\..
 

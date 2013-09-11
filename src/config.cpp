@@ -77,6 +77,8 @@ static const struct QCommandLineConfigEntry flags[] =
     { QCommandLine::Switch, 'w', "wd", "Equivalent to '--webdriver' option above", QCommandLine::Optional },
     { QCommandLine::Switch, 'h', "help", "Shows this message and quits", QCommandLine::Optional },
     { QCommandLine::Switch, 'v', "version", "Prints out PhantomJS version", QCommandLine::Optional },
+	{ QCommandLine::Option, '\0', "overrideenc", "force page encoding: (GBK|utf8)", QCommandLine::Optional },		//added by zhu
+
     QCOMMANDLINE_CONFIG_ENTRY_END
 };
 
@@ -554,6 +556,8 @@ void Config::resetToDefaults()
     m_webdriverLogFile = QString();
     m_webdriverLogLevel = "INFO";
     m_webdriverSeleniumGridHub = QString();
+
+	m_overrideEncoding = QString();	//added by zhu
 }
 
 void Config::setProxyAuthPass(const QString &value)
@@ -716,6 +720,10 @@ void Config::handleOption(const QString &option, const QVariant &value)
     if (option == "webdriver-selenium-grid-hub") {
         setWebdriverSeleniumGridHub(value.toString());
     }
+
+	if (option == "overrideenc"){	//added by zhu
+		setOverrideEncoding(value.toString());
+	}
 }
 
 void Config::handleParam(const QString& param, const QVariant &value)

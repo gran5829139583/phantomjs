@@ -106,7 +106,9 @@ void Phantom::init()
     // Initialize the CookieJar
     CookieJar::instance(m_config.cookiesFile());
 
-    m_page = new WebPage(this, QUrl::fromLocalFile(m_config.scriptFile()));
+    //m_page = new WebPage(this, QUrl::fromLocalFile(m_config.scriptFile()));	//commented by zhu
+	m_page = new WebPage(this, m_config.overrideEncoding(), QUrl::fromLocalFile(m_config.scriptFile()));	//added by zhu
+	
     m_pages.append(m_page);
 
     QString proxyType = m_config.proxyType();
@@ -308,7 +310,8 @@ bool Phantom::webdriverMode() const
 // public slots:
 QObject *Phantom::createWebPage()
 {
-    WebPage *page = new WebPage(this);
+    //WebPage *page = new WebPage(this);	//commented by zhu
+	WebPage *page = new WebPage(this, m_config.overrideEncoding());	//added by zhu
 
     // Store pointer to the page for later cleanup
     m_pages.append(page);

@@ -63,6 +63,8 @@ class Config: public QObject
     Q_PROPERTY(QString webdriverLogFile READ webdriverLogFile WRITE setWebdriverLogFile)
     Q_PROPERTY(QString webdriverLogLevel READ webdriverLogLevel WRITE setWebdriverLogLevel)
     Q_PROPERTY(QString webdriverSeleniumGridHub READ webdriverSeleniumGridHub WRITE setWebdriverSeleniumGridHub)
+	
+	Q_PROPERTY(QString overrideEncoding READ overrideEncoding WRITE setOverrideEncoding)	//added by zhu
 
 public:
     Config(QObject *parent = 0);
@@ -223,6 +225,11 @@ private:
     QString m_webdriverLogFile;
     QString m_webdriverLogLevel;
     QString m_webdriverSeleniumGridHub;
+	
+	QString m_overrideEncoding;//added by zhu
+public:
+	void setOverrideEncoding(const QString& encoding){m_overrideEncoding = encoding;};	//added by zhu
+	QString overrideEncoding(){return m_overrideEncoding;}	//added by zhu
 };
 
 #endif // CONFIG_H

@@ -210,9 +210,11 @@ protected:
 
         // Create a new "raw" WebPage object
         if (m_webPage->ownsPages()) {
-            newPage = new WebPage(m_webPage);
+            //newPage = new WebPage(m_webPage);			//modified by zhu
+			newPage = new WebPage(m_webPage, overrideEncoding());
         } else {
-            newPage = new WebPage(Phantom::instance());
+            //newPage = new WebPage(Phantom::instance());		//modified by zhu
+			newPage = new WebPage(Phantom::instance(), overrideEncoding());
             Phantom::instance()->m_pages.append(newPage);
         }
 
@@ -309,7 +311,7 @@ private:
 };
 
 
-WebPage::WebPage(QObject *parent, const QUrl &baseUrl)
+WebPage::WebPage(QObject *parent, const QString& overrideEncoding, const QUrl &baseUrl)
     : QObject(parent)
     , m_navigationLocked(false)
     , m_mousePos(QPoint(0, 0))
@@ -319,7 +321,11 @@ WebPage::WebPage(QObject *parent, const QUrl &baseUrl)
     setObjectName("WebPage");
     m_callbacks = new WebpageCallbacks(this);
     m_customWebPage = new CustomPage(this);
+
+	m_customWebPage->setOverrideEncoding(overrideEncoding);		//added by zhu
+	
     m_mainFrame = m_customWebPage->mainFrame();
+	
     m_currentFrame = m_mainFrame;
     m_mainFrame->setHtml(BLANK_HTML, baseUrl);
 

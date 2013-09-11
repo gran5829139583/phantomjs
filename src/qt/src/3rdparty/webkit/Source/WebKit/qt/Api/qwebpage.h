@@ -444,6 +444,11 @@ private:
     friend class WebCore::ResourceHandle;
     friend class WebCore::QNetworkReplyHandler;
     friend class DumpRenderTreeSupportQt;
+
+	QString m_overrideEncoding;	//added by zhu
+public:
+	void setOverrideEncoding(const QString& encoding){m_overrideEncoding = encoding;};	//added by zhu
+	QString overrideEncoding(){return m_overrideEncoding;}	//added by zhu
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(QWebPage::FindFlags)

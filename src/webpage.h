@@ -79,7 +79,8 @@ class WebPage : public QObject, public QWebFrame::PrintCallback
     Q_PROPERTY(QString focusedFrameName READ focusedFrameName)
 
 public:
-    WebPage(QObject *parent, const QUrl &baseUrl = QUrl());
+    //WebPage(QObject *parent, const QUrl &baseUrl = QUrl());	//added by zhu
+	WebPage(QObject *parent, const QString& overrideEncoding = QString(), const QUrl &baseUrl = QUrl());
     virtual ~WebPage();
 
     QWebFrame *mainFrame();

@@ -425,7 +425,9 @@ void QWebPagePrivate::createMainFrame()
         QWebFrameData frameData(page);
         mainFrame = new QWebFrame(q, &frameData);
 
-        emit q->frameCreated(mainFrame);
+		mainFrame->setOverrideEncoding(q->overrideEncoding());		//added by zhu
+
+		emit q->frameCreated(mainFrame);
     }
 }
 

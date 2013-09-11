@@ -248,6 +248,8 @@ void QWebFramePrivate::init(QWebFrame *qframe, QWebFrameData *frameData)
     frameLoaderClient = frameData->frameLoaderClient;
     frameLoaderClient->setFrame(qframe, frame);
 
+	frameLoaderClient->setOverrideEncoding(qframe->overrideEncoding());	//added by zhu
+
     frame->init();
 }
 
@@ -536,6 +538,7 @@ QWebFrame::QWebFrame(QWebPage *parent, QWebFrameData *frameData)
     : QObject(parent)
     , d(new QWebFramePrivate)
 {
+	this->setOverrideEncoding(parent->overrideEncoding());	//added by zhu
     d->page = parent;
     d->init(this, frameData);
 
@@ -553,6 +556,7 @@ QWebFrame::QWebFrame(QWebFrame *parent, QWebFrameData *frameData)
     : QObject(parent)
     , d(new QWebFramePrivate)
 {
+	this->setOverrideEncoding(parent->overrideEncoding());	//added by zhu
     d->page = parent->d->page;
     d->init(this, frameData);
 #if ENABLE(ORIENTATION_EVENTS) && ENABLE(DEVICE_ORIENTATION)

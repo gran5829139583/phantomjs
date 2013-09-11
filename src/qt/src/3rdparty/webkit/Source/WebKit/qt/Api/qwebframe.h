@@ -249,6 +249,12 @@ private:
     friend class WebCore::PlatformLayerProxyQt;
     QWebFramePrivate *d;
     Q_PRIVATE_SLOT(d, void _q_orientationChanged())
+
+
+	QString m_overrideEncoding;	//added by zhu
+public:
+	void setOverrideEncoding(const QString& encoding){m_overrideEncoding = encoding;};	//added by zhu
+	QString overrideEncoding(){return m_overrideEncoding;}	//added by zhu
 };
 
 #endif

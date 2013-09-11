@@ -283,6 +283,11 @@ private:
 
     KURL m_lastRequestedUrl;
     bool m_isOriginatingLoad;
+
+	QString m_overrideEncoding;	//added by zhu
+public:
+	void setOverrideEncoding(const QString& encoding){m_overrideEncoding = encoding;};	//added by zhu
+	QString overrideEncoding(){return m_overrideEncoding;}	//added by zhu
 };
 
 }

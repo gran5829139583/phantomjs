@@ -897,6 +897,10 @@ void FrameLoaderClientQt::setMainDocumentError(WebCore::DocumentLoader* loader, 
 // FIXME: This function should be moved into WebCore.
 void FrameLoaderClientQt::committedLoad(WebCore::DocumentLoader* loader, const char* data, int length)
 {
+	if (!m_overrideEncoding.isEmpty()){						//added by zhu
+		loader->setOverrideEncoding(m_overrideEncoding);
+	}
+
     if (!m_pluginView)
         loader->commitData(data, length);
     
@@ -1315,6 +1319,7 @@ PassRefPtr<Frame> FrameLoaderClientQt::createFrame(const KURL& url, const String
     frameData.marginHeight = marginHeight;
 
     QPointer<QWebFrame> webFrame = new QWebFrame(m_webFrame, &frameData);
+	webFrame->setOverrideEncoding(this->overrideEncoding());		//added by zhu
     // The creation of the frame may have run arbitrary JavaScript that removed it from the page already.
     if (!webFrame->d->frame->page()) {
         frameData.frame.release();
