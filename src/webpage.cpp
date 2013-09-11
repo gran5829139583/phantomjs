@@ -363,7 +363,8 @@ WebPage::WebPage(QObject *parent, const QUrl &baseUrl)
     m_customWebPage->settings()->setAttribute(QWebSettings::OfflineStorageDatabaseEnabled, true);
 	QString localStoragePath;
     if (phantomCfg->offlineStoragePath().isEmpty()) {
-		localStoragePath = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+		//localStoragePath = QDesktopServices::storageLocation(QDesktopServices::DataLocation);	//modified by zhu
+		localStoragePath = QDir::tempPath().append(QDir::separator()).append(QApplication::applicationName());	// /tmp/xpab
     } else {
         localStoragePath = phantomCfg->offlineStoragePath();
     }

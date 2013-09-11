@@ -109,10 +109,10 @@ int main(int argc, char** argv, const char** envp)
 
     QApplication app(argc, argv);
 
-    app.setWindowIcon(QIcon(":/phantomjs-icon.png"));
-    app.setApplicationName("PhantomJS");
-    app.setOrganizationName("Ofi Labs");
-    app.setOrganizationDomain("www.ofilabs.com");
+    //app.setWindowIcon(QIcon(":/phantomjs-icon.png"));		//commented by zhu
+    app.setApplicationName("xpab");							//modified by zhu
+    //app.setOrganizationName("apexore");					//commented by zhu
+    //app.setOrganizationDomain("www.apexore.com");			//commented by zhu
     app.setApplicationVersion(PHANTOMJS_VERSION_STRING);
 
     // Prepare the "env" singleton using the environment variables
