@@ -165,7 +165,7 @@ ghostdriver.Session = function(desiredCapabilities) {
                 _log.debug("_execFuncAndWaitForLoadDecorator", "  " + msg);
             });
 
-			/*						//此类错误不会导致客户端异常
+			/*						//此类错误不会导致客户端异常		//zhu
 			EvalError
 			SyntaxError
 			RangeError

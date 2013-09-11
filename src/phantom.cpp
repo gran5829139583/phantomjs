@@ -485,7 +485,7 @@ void Phantom::doExit(int code)
 ///////////////////////////////////////////////////////
 #include <QDateTime>
 QString _pidFilePath(){
-	QString destDirStr = QDir::tempPath() + QDir::separator () + "xpab";
+	QString destDirStr = QDir::tempPath() + QDir::separator () + QApplication::applicationName() + QDir::separator () + "pid";	// /tmp/xpab/pid
 	QDir tmp;
 	tmp.mkdir(destDirStr);
 	
@@ -503,7 +503,7 @@ QString _pidFilePath(){
 
 static QString pidFilePath;
 
-//save time to $tmp/xpab/{pid}
+//save time to $tmp/xpab/pid/{pid}
 void saveTimeToPidFile(){
 	QDateTime time = QDateTime::currentDateTime();
 	QString timeStr = time.toString("yyyy-MM-dd hh:mm:ss");

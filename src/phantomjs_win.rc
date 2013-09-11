@@ -11,11 +11,11 @@ BEGIN
     BEGIN
         BLOCK "040904E4"
         BEGIN
-            VALUE "FileDescription",    "PhantomJS is a headless WebKit with JavaScript API"
+            VALUE "FileDescription",    "xpab"
             VALUE "FileVersion",        PHANTOMJS_VERSION_STRING            
-            VALUE "LegalCopyright",     "Copyright (C) Ariya Hidayat 2012"
-            VALUE "OriginalFilename",   "phantomjs.exe"
-            VALUE "ProductName",        "PhantomJS"
+            VALUE "LegalCopyright",     "xpab"
+            VALUE "OriginalFilename",   "xpab"
+            VALUE "ProductName",        "xpab"
             VALUE "ProductVersion",     PHANTOMJS_VERSION_STRING
         END
     END
