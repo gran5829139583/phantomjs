@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 yum -q -v install gstreamer*
+yum -q -v install gcc-c++ libstdc++-devel
 
 set -e
 
