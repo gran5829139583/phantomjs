@@ -2,6 +2,8 @@
 
 yum -q -v install gstreamer*
 yum -q -v install gcc-c++ libstdc++-devel
+yum -q -v install openssl
+yum -q -v install openssl-devel
 
 set -e
 
